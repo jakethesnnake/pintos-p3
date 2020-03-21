@@ -1,1 +1,1 @@
-# private repo for 520 team (p3)
+# pintos project 3
