@@ -50,10 +50,12 @@ page_for_addr (const void *address)
       if (e != NULL)
         return hash_entry (e, struct page, hash_elem);
 
-      /* No page.  Expand stack? */
-
-/* add code */
-
+      /** ADDED CODE **/
+      /* Added stack growth if the page does not exist*/
+      if (p.addr > PHYS_BASE - STACK_MAX && address > (void *)thread_current()->user_esp - 32)
+      {
+        return page_allocate (p.addr, false);
+      }
     }
   return NULL;
 }
@@ -135,25 +137,37 @@ bool
 page_out (struct page *p) 
 {
   bool dirty;
-  bool ok = false;
+  bool ok = true;
 
   ASSERT (p->frame != NULL);
   ASSERT (lock_held_by_current_thread (&p->frame->lock));
 
+  /** ADDED CODE **/
   /* Mark page not present in page table, forcing accesses by the
      process to fault.  This must happen before checking the
      dirty bit, to prevent a race with the process dirtying the
      page. */
 
-/* add code here */
+  pagedir_clear_page(p->thread->pagedir, (void *) p->addr);
 
   /* Has the frame been modified? */
-
-/* add code here */
+  dirty = pagedir_is_dirty (p->thread->pagedir, (const void *) p->addr);
+  ok = !dirty;
 
   /* Write frame contents to disk if necessary. */
+  if(p->file == NULL || (p->private && dirty))
+  {
+    ok = swap_out(p);
+  }
+  else if (dirty)
+  {
+    ok = file_write_at(p->file, (const void *) p->frame->base, p->file_bytes, p->file_offset);
+  }
 
-/* add code here */
+  if(ok)
+  {
+    p->frame = NULL;
+  }
 
   return ok;
 }
