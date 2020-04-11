@@ -1,0 +1,164 @@
+﻿+---------------------------+
+                          |         CIS 520           |
+                           | PROJECT 3: Virtual Memory |
+                           |     DESIGN DOCUMENT       |
+                           +---------------------------+
+
+
+---- GROUP ----
+
+
+>> Fill in the names of your group members.
+
+
+Jake Willson
+Rylan Kasitz
+Andrew Loenen
+
+
+---- PRELIMINARIES ----
+
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+
+https://github.com/ChristianJHughes/pintos-project3
+
+
+https://github.com/rpwilliams/CIS520_Proj3
+
+
+
+
+                        PAGE TABLE MANAGEMENT
+                        =====================
+
+
+---- ALGORITHMS ----
+
+
+>> A1: In a few paragraphs, describe the existing code for locating the
+>> frame, if any, that contains the data of a given page.
+
+
+Each page struct has a value that stores the frame. Given a page, you should be able to locate the correct frame. Additionally, the frame struct contains a pointer to the page so the same can be said for locating a page from a frame.
+
+
+In order to find a free frame in memory, the function call is frame_alloc_and_lock in frame.c. This call will allocate and lock a frame for a given page. The call will also return the frame if the allocation process was successful.
+
+
+
+
+---- SYNCHRONIZATION ----
+
+
+>> A2: When two user processes both need a new frame at the same time,
+>> how are races avoided?
+
+
+Races conditions are avoided by processes needing a frame since when a process needs a frame frame_alloc_and_lock is called with then will call try_frame_alloc_and_lock which locks the critical section where f->page is assigned thus ensuring no race conditions arise.
+
+
+                       PAGING TO AND FROM DISK
+                       =======================
+
+
+---- ALGORITHMS ----
+
+
+>> B1: When a frame is required but none is free, some frame must be
+>> evicted.  Describe the algorithm used to choose a frame to evict.
+
+
+The eviction algorithm swaps out the page if the file is null or private and dirty. It writes the contents to the disk if necessary, and deallocates the frame from virtual memory. 
+
+
+>> B2: Explain your heuristic for deciding whether a page fault for an
+>> invalid virtual address should cause the stack to be extended into
+>> the page that faulted.
+
+
+We extend the stack by one page if the virtual address is within 32 bytes of the current thread’s stack pointer. Otherwise, no page will be allocated, and an attempt to access this memory address will result in a page fault.
+
+
+                         MEMORY MAPPED FILES
+                         ===================
+
+
+---- DATA STRUCTURES ----
+
+
+>> C1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+* struct mapping *map = lookup_mapping(mapping);
+   * Stores the result of lookup_mapping so we can unmap it.
+
+
+---- ALGORITHMS ----
+
+
+>> C2: Describe how memory mapped files integrate into your virtual
+>> memory subsystem.  Explain how the page fault and eviction
+>> processes differ between swap pages and other pages.
+
+
+When a swap page is evicted, all of its page sectors are written out, but other pages are written out only if they are dirty. Each time that a mapping is removed from the virtual address space, all dirty pages must be written out before they are freed from memory, but clean pages can be freed from memory immediately.
+
+
+>> C3: Explain how you determine whether a new file mapping overlaps
+>> any existing segment.
+
+
+When trying to allocate a page for our mapping, we call page_allocate() to see if there is free space. If this method fails (Meaning space is already mapped) it returns null and we unmap from there. This way, it is impossible for mappings to overlap as the system call will exit with -1.
+
+
+---- RATIONALE ----
+
+
+>> C4: Mappings created with "mmap" have similar semantics to those of
+>> data demand-paged from executables, except that "mmap" mappings are
+>> written back to their original files, not to swap.  This implies
+>> that much of their implementation can be shared.  Explain why your
+>> implementation either does or does not share much of the code for
+>> the two situations.
+
+
+We share much of the code since each page is paged out with page_out() in page.c. The only difference is that memory mappings are always written back to the file instead of swap.
+
+
+                           SURVEY QUESTIONS
+                           ================
+
+
+Answering these questions is optional, but it will help us improve the
+course in future quarters.  Feel free to tell us anything you
+want--these questions are just to spur your thoughts.  You may also
+choose to respond anonymously in the course evaluations at the end of
+the quarter.
+
+
+>> In your opinion, was this assignment, or any one of the three problems
+>> in it, too easy or too hard?  Did it take too long or too little time?
+
+
+>> Did you find that working on a particular part of the assignment gave
+>> you greater insight into some aspect of OS design?
+
+
+>> Is there some particular fact or hint we should give students in
+>> future quarters to help them solve the problems?  Conversely, did you
+>> find any of our guidance to be misleading?
+
+
+>> Do you have any suggestions for the TAs to more effectively assist
+>> students, either for future quarters or the remaining projects?
+
+
+>> Any other comments?
